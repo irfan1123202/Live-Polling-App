@@ -11,7 +11,7 @@ PulsePoll is a high-performance, real-time live polling platform built with **Re
 | Component | Technology | Description |
 | :--- | :--- | :--- |
 | **Frontend** | React 18 + Vite | SPA with Glassmorphic CSS design system, Lucide icons, and Canvas Confetti |
-| **Backend** | Go 1.21 + Gin Framework | High-concurrency RESTful API & Gorilla WebSocket server |
+| **Backend** | Go 1.24 + Gin Framework | High-concurrency RESTful API & Gorilla WebSocket server |
 | **Database** | MongoDB | Persistent document storage for users, polls, and raw audit vote records |
 | **Caching & Pub/Sub** | Redis 7 | Atomic vote count updates (`HINCRBY`), IP deduplication sets (`SADD`), and live Pub/Sub (`PUBLISH`) |
 | **Containerization** | Docker & Docker Compose | Multi-container orchestration for seamless deployment |

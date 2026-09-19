@@ -1,12 +1,14 @@
 services:
   - type: web
     name: pulsepoll-backend
-    env: go
-    buildCommand: cd backend && go build -o server ./cmd/server
-    startCommand: cd backend && ./server
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
     envVars:
       - key: PORT
-        value: 10000
+        value: 8080
+      - key: GO_VERSION
+        value: "1.24.0"
       - key: MONGO_URI
         sync: false
       - key: MONGO_DB
