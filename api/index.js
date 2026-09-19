@@ -23,15 +23,20 @@ const JWT_SECRET = process.env.JWT_SECRET || "super-secret-jwt-key-hcl-guvi-2026
 
 let cachedClient = null;
 let cachedDb = null;
+let clientPromise = null;
 
 async function connectToDatabase() {
   if (cachedClient && cachedDb) {
     return { client: cachedClient, db: cachedDb };
   }
-  const client = await MongoClient.connect(MONGO_URI, {
-    connectTimeoutMS: 10000,
-    serverSelectionTimeoutMS: 10000,
-  });
+  if (!clientPromise) {
+    const client = new MongoClient(MONGO_URI, {
+      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 10000,
+    });
+    clientPromise = client.connect();
+  }
+  const client = await clientPromise;
   const db = client.db(MONGO_DB);
   cachedClient = client;
   cachedDb = db;
@@ -72,7 +77,7 @@ app.get(['/api/health', '/health'], (req, res) => {
 });
 
 // Auth: Signup
-app.post(['/api/auth/signup', '/auth/signup', '/signup'], async (req, res) => {
+app.post(['/api/auth/signup', '/auth/signup', '/signup'], async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password || password.length < 6) {
@@ -111,12 +116,12 @@ app.post(['/api/auth/signup', '/auth/signup', '/signup'], async (req, res) => {
     });
   } catch (err) {
     console.error('Signup error:', err);
-    res.status(500).json({ error: 'Internal server error during signup' });
+    next(err);
   }
 });
 
 // Auth: Login
-app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res) => {
+app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -150,12 +155,12 @@ app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Internal server error during login' });
+    next(err);
   }
 });
 
 // Auth: Get Me
-app.get(['/api/auth/me', '/auth/me', '/me'], authMiddleware, async (req, res) => {
+app.get(['/api/auth/me', '/auth/me', '/me'], authMiddleware, async (req, res, next) => {
   try {
     const { db } = await connectToDatabase();
     const user = await db.collection('users').findOne({ _id: new ObjectId(req.userId) });
@@ -169,12 +174,12 @@ app.get(['/api/auth/me', '/auth/me', '/me'], authMiddleware, async (req, res) =>
       createdAt: user.created_at
     });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch user profile' });
+    next(err);
   }
 });
 
 // Auth: Reset Password
-app.post(['/api/auth/reset-password', '/auth/reset-password', '/reset-password'], async (req, res) => {
+app.post(['/api/auth/reset-password', '/auth/reset-password', '/reset-password'], async (req, res, next) => {
   try {
     const { email, newPassword } = req.body;
     if (!email || !newPassword || newPassword.length < 6) {
@@ -194,12 +199,12 @@ app.post(['/api/auth/reset-password', '/auth/reset-password', '/reset-password']
 
     res.json({ message: 'Password updated successfully in database' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to reset password' });
+    next(err);
   }
 });
 
 // Polls: Create Poll
-app.post(['/api/polls', '/polls'], authMiddleware, async (req, res) => {
+app.post(['/api/polls', '/polls'], authMiddleware, async (req, res, next) => {
   try {
     const { question, options } = req.body;
     if (!question || !Array.isArray(options) || options.length < 2) {
@@ -240,12 +245,12 @@ app.post(['/api/polls', '/polls'], authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Create poll error:', err);
-    res.status(500).json({ error: 'Failed to create poll' });
+    next(err);
   }
 });
 
 // Polls: Get User Polls
-app.get(['/api/polls', '/polls'], authMiddleware, async (req, res) => {
+app.get(['/api/polls', '/polls'], authMiddleware, async (req, res, next) => {
   try {
     const { db } = await connectToDatabase();
     const polls = await db.collection('polls')
@@ -264,12 +269,12 @@ app.get(['/api/polls', '/polls'], authMiddleware, async (req, res) => {
 
     res.json(formatted);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch user polls' });
+    next(err);
   }
 });
 
 // Polls: Get Poll By Share Code
-app.get(['/api/polls/share/:shareCode', '/polls/share/:shareCode'], async (req, res) => {
+app.get(['/api/polls/share/:shareCode', '/polls/share/:shareCode'], async (req, res, next) => {
   try {
     const { shareCode } = req.params;
     const { db } = await connectToDatabase();
@@ -286,12 +291,12 @@ app.get(['/api/polls/share/:shareCode', '/polls/share/:shareCode'], async (req, 
       createdAt: poll.created_at
     });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch poll' });
+    next(err);
   }
 });
 
 // Polls: Get Poll By ID
-app.get(['/api/polls/:id', '/polls/:id'], async (req, res) => {
+app.get(['/api/polls/:id', '/polls/:id'], async (req, res, next) => {
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
@@ -308,12 +313,12 @@ app.get(['/api/polls/:id', '/polls/:id'], async (req, res) => {
       createdAt: poll.created_at
     });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch poll' });
+    next(err);
   }
 });
 
 // Polls: Delete Poll
-app.delete(['/api/polls/:id', '/polls/:id'], authMiddleware, async (req, res) => {
+app.delete(['/api/polls/:id', '/polls/:id'], authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
@@ -326,12 +331,12 @@ app.delete(['/api/polls/:id', '/polls/:id'], authMiddleware, async (req, res) =>
     }
     res.json({ message: 'Poll deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete poll' });
+    next(err);
   }
 });
 
 // Polls: Toggle Status (Freeze/Unfreeze)
-app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, async (req, res) => {
+app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -349,12 +354,12 @@ app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, async 
 
     res.json({ message: `Poll status updated to ${status}` });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update poll status' });
+    next(err);
   }
 });
 
 // Voting: Cast Vote
-app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res) => {
+app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res, next) => {
   try {
     const { id } = req.params;
     const { optionId } = req.body;
@@ -416,12 +421,12 @@ app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res) => {
     });
   } catch (err) {
     console.error('Vote error:', err);
-    res.status(500).json({ error: 'Failed to record vote' });
+    next(err);
   }
 });
 
 // Voting: Get Results
-app.get(['/api/polls/:id/results', '/polls/:id/results'], async (req, res) => {
+app.get(['/api/polls/:id/results', '/polls/:id/results'], async (req, res, next) => {
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
@@ -438,8 +443,14 @@ app.get(['/api/polls/:id/results', '/polls/:id/results'], async (req, res) => {
       isActive: poll.is_active
     });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch results' });
+    next(err);
   }
+});
+
+// Global Express Error Middleware
+app.use((err, req, res, next) => {
+  console.error('[VERCEL API ERROR]', err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
 // Export Express App for Vercel Serverless Runtime
