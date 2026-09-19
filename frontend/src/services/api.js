@@ -37,7 +37,7 @@ async function request(endpoint, options = {}) {
       if (response.status === 403) {
         errorMsg = 'Access Forbidden (403). Backend service pending deployment or origin blocked.';
       } else if (response.status === 401) {
-        errorMsg = 'Unauthorized (401). Invalid credentials or session expired.';
+        errorMsg = 'Invalid email or password. Please check your credentials or Sign Up.';
       } else if (response.status === 405) {
         errorMsg = 'Method Not Allowed (405). Check API route method.';
       } else {
