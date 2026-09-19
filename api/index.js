@@ -295,12 +295,19 @@ app.get(['/api/polls/share/:shareCode', '/polls/share/:shareCode'], async (req, 
   }
 });
 
-// Polls: Get Poll By ID
+// Polls: Get Poll By ID or Share Code
 app.get(['/api/polls/:id', '/polls/:id'], async (req, res, next) => {
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
-    const poll = await db.collection('polls').findOne({ _id: new ObjectId(id) });
+    const pollsCol = db.collection('polls');
+    let poll = null;
+    if (ObjectId.isValid(id) && id.length === 24) {
+      poll = await pollsCol.findOne({ _id: new ObjectId(id) });
+    }
+    if (!poll) {
+      poll = await pollsCol.findOne({ share_code: id.toUpperCase() });
+    }
     if (!poll) {
       return res.status(404).json({ error: 'Poll not found' });
     }
@@ -373,7 +380,14 @@ app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res, next) => {
     const pollsCol = db.collection('polls');
     const votesCol = db.collection('votes');
 
-    const poll = await pollsCol.findOne({ _id: new ObjectId(id) });
+    let poll = null;
+    if (ObjectId.isValid(id) && id.length === 24) {
+      poll = await pollsCol.findOne({ _id: new ObjectId(id) });
+    }
+    if (!poll) {
+      poll = await pollsCol.findOne({ share_code: id.toUpperCase() });
+    }
+
     if (!poll) {
       return res.status(404).json({ error: 'Poll not found' });
     }
@@ -384,7 +398,7 @@ app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res, next) => {
 
     // Check if voter already voted
     const existingVote = await votesCol.findOne({
-      poll_id: new ObjectId(id),
+      poll_id: poll._id,
       voter_token: voterToken
     });
 
@@ -394,7 +408,7 @@ app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res, next) => {
 
     // Record vote
     await votesCol.insertOne({
-      poll_id: new ObjectId(id),
+      poll_id: poll._id,
       voter_token: voterToken,
       option_id: optionId,
       created_at: new Date()
@@ -402,12 +416,12 @@ app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res, next) => {
 
     // Update poll options count
     await pollsCol.updateOne(
-      { _id: new ObjectId(id), "options.id": optionId },
+      { _id: poll._id, "options.id": optionId },
       { $inc: { "options.$.votes": 1 } }
     );
 
     // Fetch updated poll
-    const updatedPoll = await pollsCol.findOne({ _id: new ObjectId(id) });
+    const updatedPoll = await pollsCol.findOne({ _id: poll._id });
 
     res.json({
       message: 'Vote recorded successfully',
@@ -430,7 +444,15 @@ app.get(['/api/polls/:id/results', '/polls/:id/results'], async (req, res, next)
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
-    const poll = await db.collection('polls').findOne({ _id: new ObjectId(id) });
+    const pollsCol = db.collection('polls');
+    let poll = null;
+    if (ObjectId.isValid(id) && id.length === 24) {
+      poll = await pollsCol.findOne({ _id: new ObjectId(id) });
+    }
+    if (!poll) {
+      poll = await pollsCol.findOne({ share_code: id.toUpperCase() });
+    }
+
     if (!poll) {
       return res.status(404).json({ error: 'Poll not found' });
     }
