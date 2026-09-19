@@ -12,10 +12,12 @@ function getVoterToken() {
 
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem('token');
+  const isPublicAuthRoute = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/signup') || endpoint.startsWith('/auth/reset-password');
+
   const headers = {
     'Content-Type': 'application/json',
     'X-Voter-Token': getVoterToken(),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((token && !isPublicAuthRoute) ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 

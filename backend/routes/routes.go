@@ -21,6 +21,11 @@ func SetupRouter(
 	// Use CORS middleware
 	r.Use(middleware.CORSMiddleware(frontendURL))
 
+	// Explicit OPTIONS preflight handler
+	r.OPTIONS("/*path", func(c *gin.Context) {
+		c.Status(204)
+	})
+
 	api := r.Group("/api")
 	{
 		// Health check
