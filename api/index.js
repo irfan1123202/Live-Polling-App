@@ -69,6 +69,34 @@ function generateShareCode() {
   return code;
 }
 
+// Helper to format Poll objects with full field compatibility
+function formatPoll(poll) {
+  if (!poll) return null;
+  const options = (poll.options || []).map(opt => {
+    const vCount = opt.votesCount !== undefined ? opt.votesCount : (opt.votes || 0);
+    return {
+      id: opt.id,
+      text: opt.text,
+      votes: vCount,
+      votesCount: vCount
+    };
+  });
+  const totalVotes = options.reduce((sum, o) => sum + o.votesCount, 0);
+  const status = poll.status || (poll.is_active !== false && poll.isActive !== false ? 'active' : 'closed');
+  const pollIdStr = poll._id ? poll._id.toString() : (poll.id || poll.pollId);
+  return {
+    id: pollIdStr,
+    pollId: pollIdStr,
+    question: poll.question,
+    options: options,
+    shareCode: poll.share_code || poll.shareCode,
+    status: status,
+    isActive: status === 'active',
+    totalVotes: totalVotes,
+    createdAt: poll.created_at || poll.createdAt
+  };
+}
+
 // ---------------- ROUTES (Flexible path matching) ----------------
 
 // Health check
@@ -235,14 +263,10 @@ app.post(['/api/polls', '/polls'], authMiddleware, async (req, res, next) => {
     };
 
     const result = await pollsCol.insertOne(newPoll);
-    res.status(201).json({
-      id: result.insertedId.toString(),
-      question: newPoll.question,
-      options: newPoll.options,
-      shareCode: newPoll.share_code,
-      isActive: newPoll.is_active,
-      createdAt: newPoll.created_at
-    });
+    res.status(201).json(formatPoll({
+      _id: result.insertedId,
+      ...newPoll
+    }));
   } catch (err) {
     console.error('Create poll error:', err);
     next(err);
@@ -258,16 +282,7 @@ app.get(['/api/polls', '/polls'], authMiddleware, async (req, res, next) => {
       .sort({ created_at: -1 })
       .toArray();
 
-    const formatted = polls.map(p => ({
-      id: p._id.toString(),
-      question: p.question,
-      options: p.options,
-      shareCode: p.share_code,
-      isActive: p.is_active,
-      createdAt: p.created_at
-    }));
-
-    res.json(formatted);
+    res.json(polls.map(p => formatPoll(p)));
   } catch (err) {
     next(err);
   }
@@ -282,14 +297,7 @@ app.get(['/api/polls/share/:shareCode', '/polls/share/:shareCode'], async (req, 
     if (!poll) {
       return res.status(404).json({ error: 'Poll not found' });
     }
-    res.json({
-      id: poll._id.toString(),
-      question: poll.question,
-      options: poll.options,
-      shareCode: poll.share_code,
-      isActive: poll.is_active,
-      createdAt: poll.created_at
-    });
+    res.json(formatPoll(poll));
   } catch (err) {
     next(err);
   }
@@ -311,14 +319,7 @@ app.get(['/api/polls/:id', '/polls/:id'], async (req, res, next) => {
     if (!poll) {
       return res.status(404).json({ error: 'Poll not found' });
     }
-    res.json({
-      id: poll._id.toString(),
-      question: poll.question,
-      options: poll.options,
-      shareCode: poll.share_code,
-      isActive: poll.is_active,
-      createdAt: poll.created_at
-    });
+    res.json(formatPoll(poll));
   } catch (err) {
     next(err);
   }
@@ -352,7 +353,7 @@ app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, async 
     const { db } = await connectToDatabase();
     const result = await db.collection('polls').updateOne(
       { _id: new ObjectId(id), user_id: new ObjectId(req.userId) },
-      { $set: { is_active: isActive } }
+      { $set: { is_active: isActive, status: status } }
     );
 
     if (result.matchedCount === 0) {
@@ -425,13 +426,7 @@ app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res, next) => {
 
     res.json({
       message: 'Vote recorded successfully',
-      poll: {
-        id: updatedPoll._id.toString(),
-        question: updatedPoll.question,
-        options: updatedPoll.options,
-        shareCode: updatedPoll.share_code,
-        isActive: updatedPoll.is_active
-      }
+      poll: formatPoll(updatedPoll)
     });
   } catch (err) {
     console.error('Vote error:', err);
@@ -457,13 +452,7 @@ app.get(['/api/polls/:id/results', '/polls/:id/results'], async (req, res, next)
       return res.status(404).json({ error: 'Poll not found' });
     }
 
-    res.json({
-      id: poll._id.toString(),
-      question: poll.question,
-      options: poll.options,
-      shareCode: poll.share_code,
-      isActive: poll.is_active
-    });
+    res.json(formatPoll(poll));
   } catch (err) {
     next(err);
   }

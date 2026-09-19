@@ -35,7 +35,7 @@ export const Dashboard = () => {
 
     try {
       await api.deletePoll(pollId);
-      setPolls(polls.filter(p => p.pollId !== pollId));
+      setPolls(polls.filter(p => (p.pollId || p.id) !== pollId));
       setToast({ message: 'Poll deleted successfully', type: 'success' });
     } catch (err) {
       setToast({ message: err.message || 'Failed to delete poll', type: 'error' });
@@ -45,7 +45,7 @@ export const Dashboard = () => {
   const handleToggleStatus = async (pollId, targetStatus) => {
     try {
       await api.togglePollStatus(pollId, targetStatus);
-      setPolls(polls.map(p => p.pollId === pollId ? { ...p, status: targetStatus } : p));
+      setPolls(polls.map(p => (p.pollId || p.id) === pollId ? { ...p, status: targetStatus, isActive: targetStatus === 'active' } : p));
       
       if (targetStatus === 'frozen') {
         setToast({ message: 'Freeze activated! Voting is temporarily paused for audience.', type: 'info' });
@@ -59,13 +59,23 @@ export const Dashboard = () => {
     }
   };
 
-  const totalVotesCast = polls.reduce((acc, p) => acc + (p.totalVotes || 0), 0);
-  const activePollsCount = polls.filter(p => p.status === 'active' && !p.isExpired).length;
+  const totalVotesCast = polls.reduce((acc, p) => {
+    const pollVotes = p.totalVotes !== undefined 
+      ? p.totalVotes 
+      : (p.options || []).reduce((sum, o) => sum + (o.votesCount ?? o.votes ?? 0), 0);
+    return acc + pollVotes;
+  }, 0);
+
+  const activePollsCount = polls.filter(p => {
+    const status = p.status || (p.isActive !== false ? 'active' : 'closed');
+    return status === 'active' && !p.isExpired;
+  }).length;
 
   const filteredPolls = polls.filter((poll) => {
-    const matchesSearch = poll.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          poll.shareCode.toLowerCase().includes(searchQuery.toLowerCase());
-    const isActive = poll.status === 'active' && !poll.isExpired;
+    const matchesSearch = (poll.question || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (poll.shareCode || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const status = poll.status || (poll.isActive !== false ? 'active' : 'closed');
+    const isActive = status === 'active' && !poll.isExpired;
     if (statusFilter === 'active') return matchesSearch && isActive;
     if (statusFilter === 'closed') return matchesSearch && !isActive;
     return matchesSearch;
@@ -195,7 +205,7 @@ export const Dashboard = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
           {filteredPolls.map((poll) => (
             <PollCard
-              key={poll.pollId}
+              key={poll.pollId || poll.id || poll.shareCode}
               poll={poll}
               onDelete={handleDelete}
               onToggleStatus={handleToggleStatus}
