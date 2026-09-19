@@ -11,10 +11,10 @@ const proxyConfig = {
     ws: true,
     configure: (proxy, options) => {
       proxy.on('error', (err, req, res) => {
-        console.error('[Vite Proxy Error]', err.message);
+        console.error('[Vite Proxy Connection Error]', err.message);
         if (res && !res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: `Backend connection error: ${err.message}` }));
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: `Bad Gateway: Unable to reach target server (${err.message})` }));
         }
       });
     },
