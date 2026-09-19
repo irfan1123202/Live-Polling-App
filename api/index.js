@@ -1,8 +1,8 @@
-const express = require('express');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { MongoClient, ObjectId } = require('mongodb');
+import express from 'express';
+import cors from 'cors';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { MongoClient, ObjectId } = require('mongodb');
 
 const app = express();
 
@@ -453,5 +453,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-// Export Express App for Vercel Serverless Runtime
-module.exports = app;
+// Export Express App for Vercel Serverless ES Module Runtime
+export default app;
