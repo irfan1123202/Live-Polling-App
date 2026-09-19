@@ -52,12 +52,13 @@ async function connectToDatabase() {
     const db = client.db(MONGO_DB);
     cachedClient = client;
     cachedDb = db;
+    console.log('[AUTH DIAGNOSTIC] Database Connection: Success');
     return { client, db };
   } catch (err) {
     cachedClient = null;
     cachedDb = null;
     clientPromise = null;
-    console.error('[MONGODB CONNECT ERROR]', err);
+    console.error('[AUTH DIAGNOSTIC] Database Connection: Failure', err.message);
     throw err;
   }
 }
@@ -171,8 +172,10 @@ app.post(['/api/auth/signup', '/auth/signup', '/signup'], async (req, res, next)
 app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
-    console.log('[AUTH DEBUG] Login request received');
-    console.log('[AUTH DEBUG] Email:', email);
+    const normalizedEmail = email ? String(email).trim().toLowerCase() : '';
+    
+    console.log('[AUTH DIAGNOSTIC] Email received:', !!email);
+    console.log('[AUTH DIAGNOSTIC] Normalized email:', normalizedEmail);
     
     if (!email || !password) {
       console.warn('[LOGIN BAD REQUEST] Missing email or password');
@@ -182,36 +185,49 @@ app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) =>
     const { db } = await connectToDatabase();
     const usersCol = db.collection('users');
 
-    const user = await usersCol.findOne({ email: email.toLowerCase().trim() });
-    console.log('[AUTH DEBUG] User found:', !!user);
-    if (!user) {
-      console.warn(`[LOGIN AUTH FAILED] User not found: "${email}"`);
+    const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const user = await usersCol.findOne({
+      $or: [
+        { email: normalizedEmail },
+        { email: new RegExp('^' + escapedEmail + '$', 'i') }
+      ]
+    });
+
+    console.log('[AUTH DIAGNOSTIC] User found:', !!user);
+
+    const passwordHash = user ? (user.password_hash || user.password || user.passwordHash) : null;
+    console.log('[AUTH DIAGNOSTIC] password_hash exists:', !!passwordHash);
+    console.log('[AUTH DIAGNOSTIC] password_hash type:', typeof passwordHash);
+
+    if (!user || !passwordHash) {
+      console.warn(`[LOGIN AUTH FAILED] User not found or no password hash present for: "${normalizedEmail}"`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    console.log('[AUTH DEBUG] Password match:', isMatch);
+    const isMatch = await bcrypt.compare(password, passwordHash);
+    console.log('[AUTH DIAGNOSTIC] Bcrypt compare result:', isMatch);
+
     if (!isMatch) {
-      console.warn(`[LOGIN AUTH FAILED] Password mismatch for: "${email}"`);
+      console.warn(`[LOGIN AUTH FAILED] Password mismatch for: "${normalizedEmail}"`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const userId = user._id.toString();
     const token = jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
 
-    console.log(`[LOGIN SUCCESS] User authenticated: "${email}" (ID: ${userId})`);
+    console.log(`[LOGIN SUCCESS] User authenticated: "${normalizedEmail}" (ID: ${userId})`);
     res.json({
       token,
       user: {
         id: userId,
         name: user.name,
         email: user.email,
-        createdAt: user.created_at
+        createdAt: user.created_at || user.createdAt
       }
     });
   } catch (err) {
-    console.error('[LOGIN EXCEPTION]', err);
-    res.status(500).json({ error: `Server error: ${err.message || 'Internal server error'}` });
+    console.error('[LOGIN ERROR]', err.message);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
