@@ -1,0 +1,142 @@
+{
+  "users": {
+    "mohamedirfan1182005@gmail.com": {
+      "id": "49b85c92-1151-4ebd-9f5a-4cfeae39c166",
+      "name": "irfan",
+      "email": "mohamedirfan1182005@gmail.com",
+      "password": "12345678",
+      "created_at": "2026-09-18T12:37:30.298387"
+    }
+  },
+  "polls": {
+    "4c353f69": {
+      "id": "4c353f69",
+      "pollId": "4c353f69",
+      "question": "What is your favorite programming language?",
+      "options": [
+        {
+          "id": 1,
+          "text": "Python",
+          "votesCount": 1
+        },
+        {
+          "id": 2,
+          "text": "JavaScript",
+          "votesCount": 0
+        },
+        {
+          "id": 3,
+          "text": "Go",
+          "votesCount": 0
+        },
+        {
+          "id": 4,
+          "text": "Java",
+          "votesCount": 0
+        }
+      ],
+      "shareCode": "QEKN4G",
+      "status": "active",
+      "totalVotes": 1,
+      "isExpired": false,
+      "createdAt": "2026-09-18T12:37:34.651337"
+    },
+    "df4e76f7": {
+      "id": "df4e76f7",
+      "pollId": "df4e76f7",
+      "question": "What is your favorite programming language?",
+      "options": [
+        {
+          "id": 1,
+          "text": "Python",
+          "votesCount": 0
+        },
+        {
+          "id": 2,
+          "text": "JavaScript",
+          "votesCount": 0
+        },
+        {
+          "id": 3,
+          "text": "Go",
+          "votesCount": 0
+        },
+        {
+          "id": 4,
+          "text": "Java",
+          "votesCount": 0
+        }
+      ],
+      "shareCode": "PQX5C0",
+      "status": "active",
+      "totalVotes": 0,
+      "isExpired": false,
+      "createdAt": "2026-09-18T12:44:22.025150"
+    },
+    "101df5f6": {
+      "id": "101df5f6",
+      "pollId": "101df5f6",
+      "question": "What is your favorite programming language?",
+      "options": [
+        {
+          "id": 1,
+          "text": "Python",
+          "votesCount": 1
+        },
+        {
+          "id": 2,
+          "text": "JavaScript",
+          "votesCount": 0
+        },
+        {
+          "id": 3,
+          "text": "Go",
+          "votesCount": 0
+        },
+        {
+          "id": 4,
+          "text": "Java",
+          "votesCount": 0
+        }
+      ],
+      "shareCode": "2K89Z8",
+      "status": "active",
+      "totalVotes": 1,
+      "isExpired": false,
+      "createdAt": "2026-09-18T12:46:23.735741"
+    }
+  },
+  "votes": [
+    {
+      "id": "053f4a13-8372-4c55-8e36-48276e872752",
+      "poll_id": "4c353f69",
+      "option_id": 1,
+      "voter_ip": "127.0.0.1",
+      "created_at": "2026-09-18T12:43:20.757230"
+    },
+    {
+      "id": "eb01efc7-8ee4-4018-b71e-fcb1b6164c9e",
+      "poll_id": "101df5f6",
+      "option_id": 1,
+      "voter_ip": "127.0.0.1",
+      "created_at": "2026-09-18T12:46:25.980724"
+    }
+  ],
+  "redis_counts": {
+    "4c353f69": {
+      "1": 1
+    },
+    "df4e76f7": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0
+    },
+    "101df5f6": {
+      "1": 1,
+      "2": 0,
+      "3": 0,
+      "4": 0
+    }
+  }
+}
