@@ -35,7 +35,16 @@ const ProtectedRoute = ({ children }) => {
 
 const RootRedirect = () => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="container main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <div className="live-badge" style={{ fontSize: '1rem', padding: '10px 20px' }}>
+          <span className="pulse-dot"></span>
+          Loading Pollify Engine...
+        </div>
+      </div>
+    );
+  }
   return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
 };
 
@@ -53,8 +62,9 @@ export default function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 
-                {/* Public Voting Route */}
+                {/* Public Routes */}
                 <Route path="/poll/:shareCode" element={<PublicPoll />} />
+                <Route path="/poll/:id/results" element={<PollResults />} />
 
                 {/* Protected Creator Routes */}
                 <Route
@@ -70,14 +80,6 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <CreatePoll />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/poll/:id/results"
-                  element={
-                    <ProtectedRoute>
-                      <PollResults />
                     </ProtectedRoute>
                   }
                 />
