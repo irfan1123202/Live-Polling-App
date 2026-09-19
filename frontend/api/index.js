@@ -171,7 +171,8 @@ app.post(['/api/auth/signup', '/auth/signup', '/signup'], async (req, res, next)
 app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
-    console.log(`[LOGIN ATTEMPT] Email: "${email}"`);
+    console.log('[AUTH DEBUG] Login request received');
+    console.log('[AUTH DEBUG] Email:', email);
     
     if (!email || !password) {
       console.warn('[LOGIN BAD REQUEST] Missing email or password');
@@ -182,12 +183,14 @@ app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) =>
     const usersCol = db.collection('users');
 
     const user = await usersCol.findOne({ email: email.toLowerCase().trim() });
+    console.log('[AUTH DEBUG] User found:', !!user);
     if (!user) {
       console.warn(`[LOGIN AUTH FAILED] User not found: "${email}"`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    console.log('[AUTH DEBUG] Password match:', isMatch);
     if (!isMatch) {
       console.warn(`[LOGIN AUTH FAILED] Password mismatch for: "${email}"`);
       return res.status(401).json({ error: 'Invalid email or password' });
