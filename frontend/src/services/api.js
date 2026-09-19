@@ -1,4 +1,7 @@
-const rawApiBase = import.meta.env.VITE_API_URL || '/api';
+const defaultBase = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'https://live-polling-app-rose.vercel.app/api'
+  : '/api';
+const rawApiBase = import.meta.env.VITE_API_URL || defaultBase;
 const API_BASE = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
 
 function getVoterToken() {
