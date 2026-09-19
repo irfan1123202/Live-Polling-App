@@ -11,10 +11,28 @@ export const PollCard = ({ poll, onDelete, onToggleStatus, onCopyShareLink }) =>
   const pollStatus = poll.status || (poll.isActive !== false ? 'active' : 'closed');
   const shareUrl = `${window.location.origin}/poll/${poll.shareCode}`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(poll.shareCode);
+  const handleCopy = async () => {
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare({ url: shareUrl })) {
+        await navigator.share({
+          title: `Vote on Poll: ${poll.question}`,
+          text: `Cast your vote on: "${poll.question}"`,
+          url: shareUrl
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+        } catch (e) {
+          console.error('Clipboard copy failed:', e);
+        }
+      }
+    }
     setCopied(true);
-    if (onCopyShareLink) onCopyShareLink(poll.shareCode);
+    if (onCopyShareLink) onCopyShareLink(shareUrl);
     setTimeout(() => setCopied(false), 2000);
   };
 

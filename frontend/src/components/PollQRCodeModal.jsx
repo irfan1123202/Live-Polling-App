@@ -35,9 +35,13 @@ export const PollQRCodeModal = ({ poll, isOpen, onClose }) => {
 
   const voteUrl = `${window.location.origin}/poll/${poll.shareCode}`;
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (!poll?.shareCode) return;
-    navigator.clipboard.writeText(poll.shareCode);
+    try {
+      await navigator.clipboard.writeText(voteUrl);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -182,7 +186,7 @@ export const PollQRCodeModal = ({ poll, isOpen, onClose }) => {
           </button>
           <button onClick={handleCopyLink} className="btn btn-primary" style={{ padding: '10px', fontSize: '0.85rem', justifyContent: 'center' }}>
             {copied ? <Check size={16} /> : <Copy size={16} />}
-            {copied ? 'Code Copied' : 'Copy Code'}
+            {copied ? 'Link Copied' : 'Copy Link'}
           </button>
         </div>
       </div>

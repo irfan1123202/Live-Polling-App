@@ -209,7 +209,7 @@ export const Dashboard = () => {
               poll={poll}
               onDelete={handleDelete}
               onToggleStatus={handleToggleStatus}
-              onCopyShareLink={(code) => setToast({ message: `Poll code "${code || ''}" copied to clipboard!`, type: 'success' })}
+              onCopyShareLink={(url) => setToast({ message: 'Poll vote link copied to clipboard!', type: 'success' })}
             />
           ))}
         </div>
