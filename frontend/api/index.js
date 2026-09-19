@@ -28,8 +28,8 @@ app.use((req, res, next) => {
 });
 
 // MongoDB connection caching for Vercel Serverless
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://irfanmohamed1182005_db_user:Irfan1123@polling.e6halcl.mongodb.net/?appName=Polling";
-const MONGO_DB = process.env.MONGO_DB || "livepolling";
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || process.env.DATABASE_URL || "mongodb+srv://irfanmohamed1182005_db_user:Irfan1123@polling.e6halcl.mongodb.net/?appName=Polling";
+const MONGO_DB = process.env.MONGO_DB || process.env.DATABASE_NAME || "livepolling";
 const JWT_SECRET = process.env.JWT_SECRET || "super-secret-jwt-key-hcl-guvi-2026";
 
 let cachedClient = null;
@@ -205,7 +205,7 @@ app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) =>
     }
 
     const isMatch = await bcrypt.compare(password, passwordHash);
-    console.log('[AUTH DIAGNOSTIC] Bcrypt compare result:', isMatch);
+    console.log('[AUTH DIAGNOSTIC] bcrypt match:', isMatch);
 
     if (!isMatch) {
       console.warn(`[LOGIN AUTH FAILED] Password mismatch for: "${normalizedEmail}"`);
