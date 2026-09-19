@@ -16,9 +16,10 @@ export const Dashboard = () => {
     setLoading(true);
     try {
       const data = await api.getUserPolls();
-      setPolls(data);
+      setPolls(Array.isArray(data) ? data : []);
     } catch (err) {
       setToast({ message: err.message || 'Failed to fetch polls', type: 'error' });
+      setPolls([]);
     } finally {
       setLoading(false);
     }

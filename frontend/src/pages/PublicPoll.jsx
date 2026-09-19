@@ -38,12 +38,14 @@ export const PublicPoll = () => {
     fetchPoll();
   }, [shareCode]);
 
+  const pollTargetId = poll?.pollId || poll?.id || shareCode;
+
   // Connect WebSocket for real-time live updates
   useEffect(() => {
-    if (!poll?.pollId) return;
+    if (!pollTargetId) return;
 
     const ws = new PollWebSocket(
-      poll.pollId,
+      pollTargetId,
       (eventData) => {
         if (eventData.event === 'VOTE_UPDATED' || eventData.options) {
           setPoll(prev => prev ? {
@@ -61,7 +63,7 @@ export const PublicPoll = () => {
     return () => {
       ws.disconnect();
     };
-  }, [poll?.pollId]);
+  }, [pollTargetId]);
 
   const handleVoteSubmit = async (e) => {
     e.preventDefault();
@@ -74,8 +76,10 @@ export const PublicPoll = () => {
     setToast(null);
 
     try {
-      const res = await api.castVote(poll.pollId, selectedOption);
-      setPoll(res.results);
+      const res = await api.castVote(pollTargetId, selectedOption);
+      if (res.poll || res.results) {
+        setPoll(res.poll || res.results);
+      }
       setHasVoted(true);
 
       // Trigger Confetti Effect
@@ -126,8 +130,9 @@ export const PublicPoll = () => {
     );
   }
 
-  const isFrozen = poll.status === 'frozen';
-  const isClosed = poll.status === 'closed' || poll.isExpired;
+  const status = poll.status || (poll.isActive !== false ? 'active' : 'closed');
+  const isFrozen = status === 'frozen';
+  const isClosed = status === 'closed' || poll.isExpired;
 
   return (
     <div className="container main-content" style={{ maxWidth: '640px' }}>
