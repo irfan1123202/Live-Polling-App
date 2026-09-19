@@ -10,6 +10,17 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
+// Explicit CORS & Preflight Middleware for Vercel Serverless
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Voter-Token');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
 // Debug logger
 app.use((req, res, next) => {
   console.log(`[VERCEL API] ${req.method} ${req.url} (path: ${req.path})`);
@@ -29,18 +40,26 @@ async function connectToDatabase() {
   if (cachedClient && cachedDb) {
     return { client: cachedClient, db: cachedDb };
   }
-  if (!clientPromise) {
-    const client = new MongoClient(MONGO_URI, {
-      connectTimeoutMS: 10000,
-      serverSelectionTimeoutMS: 10000,
-    });
-    clientPromise = client.connect();
+  try {
+    if (!clientPromise) {
+      const client = new MongoClient(MONGO_URI, {
+        connectTimeoutMS: 10000,
+        serverSelectionTimeoutMS: 10000,
+      });
+      clientPromise = client.connect();
+    }
+    const client = await clientPromise;
+    const db = client.db(MONGO_DB);
+    cachedClient = client;
+    cachedDb = db;
+    return { client, db };
+  } catch (err) {
+    cachedClient = null;
+    cachedDb = null;
+    clientPromise = null;
+    console.error('[MONGODB CONNECT ERROR]', err);
+    throw err;
   }
-  const client = await clientPromise;
-  const db = client.db(MONGO_DB);
-  cachedClient = client;
-  cachedDb = db;
-  return { client, db };
 }
 
 // Authentication Middleware
