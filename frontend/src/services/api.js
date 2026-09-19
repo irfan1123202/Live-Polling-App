@@ -29,7 +29,18 @@ async function request(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const errorMsg = data.error || data.message || `Request failed with status ${response.status}`;
+    let errorMsg = data.error || data.message;
+    if (!errorMsg) {
+      if (response.status === 403) {
+        errorMsg = 'Access Forbidden (403). Backend service pending deployment or origin blocked.';
+      } else if (response.status === 401) {
+        errorMsg = 'Unauthorized (401). Invalid credentials or session expired.';
+      } else if (response.status === 405) {
+        errorMsg = 'Method Not Allowed (405). Check API route method.';
+      } else {
+        errorMsg = `Request failed with status ${response.status}`;
+      }
+    }
     throw new Error(errorMsg);
   }
 
