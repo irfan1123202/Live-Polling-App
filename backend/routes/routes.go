@@ -64,6 +64,8 @@ func SetupRouter(
 				protected.GET("", pollCtrl.GetUserPolls)
 				protected.DELETE("/:id", pollCtrl.DeletePoll)
 				protected.PATCH("/:id/status", pollCtrl.TogglePollStatus)
+				protected.PUT("/:id/status", pollCtrl.TogglePollStatus)
+				protected.POST("/:id/status", pollCtrl.TogglePollStatus)
 			}
 		}
 	}

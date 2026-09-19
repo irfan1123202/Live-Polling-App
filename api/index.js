@@ -363,7 +363,7 @@ app.delete(['/api/polls/:id', '/polls/:id'], authMiddleware, async (req, res, ne
 });
 
 // Polls: Toggle Status (Freeze/Unfreeze)
-app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, async (req, res, next) => {
+const handleToggleStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -383,7 +383,10 @@ app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, async 
   } catch (err) {
     next(err);
   }
-});
+};
+app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, handleToggleStatus);
+app.put(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, handleToggleStatus);
+app.post(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, handleToggleStatus);
 
 // Voting: Cast Vote
 app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res, next) => {
