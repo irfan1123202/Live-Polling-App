@@ -170,27 +170,33 @@ app.post(['/api/auth/signup', '/auth/signup', '/signup'], async (req, res, next)
 // Auth: Login
 app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+    console.log(`[LOGIN ATTEMPT] Email: "${email}"`);
+    
     if (!email || !password) {
+      console.warn('[LOGIN BAD REQUEST] Missing email or password');
       return res.status(400).json({ error: 'Please enter both email and password' });
     }
 
     const { db } = await connectToDatabase();
     const usersCol = db.collection('users');
 
-    const user = await usersCol.findOne({ email: email.toLowerCase() });
+    const user = await usersCol.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
+      console.warn(`[LOGIN AUTH FAILED] User not found: "${email}"`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      console.warn(`[LOGIN AUTH FAILED] Password mismatch for: "${email}"`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const userId = user._id.toString();
     const token = jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
 
+    console.log(`[LOGIN SUCCESS] User authenticated: "${email}" (ID: ${userId})`);
     res.json({
       token,
       user: {
@@ -201,8 +207,8 @@ app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res, next) =>
       }
     });
   } catch (err) {
-    console.error('Login error:', err);
-    next(err);
+    console.error('[LOGIN EXCEPTION]', err);
+    res.status(500).json({ error: `Server error: ${err.message || 'Internal server error'}` });
   }
 });
 
