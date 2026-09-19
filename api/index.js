@@ -10,6 +10,12 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
+// Debug logger
+app.use((req, res, next) => {
+  console.log(`[VERCEL API] ${req.method} ${req.url} (path: ${req.path})`);
+  next();
+});
+
 // MongoDB connection caching for Vercel Serverless
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://irfanmohamed1182005_db_user:Irfan1123@polling.e6halcl.mongodb.net/?appName=Polling";
 const MONGO_DB = process.env.MONGO_DB || "livepolling";
@@ -58,15 +64,15 @@ function generateShareCode() {
   return code;
 }
 
-// ---------------- ROUTES ----------------
+// ---------------- ROUTES (Flexible path matching) ----------------
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({ status: 'ok', message: 'Pollify Vercel Serverless Backend operational' });
 });
 
 // Auth: Signup
-app.post('/api/auth/signup', async (req, res) => {
+app.post(['/api/auth/signup', '/auth/signup', '/signup'], async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password || password.length < 6) {
@@ -110,7 +116,7 @@ app.post('/api/auth/signup', async (req, res) => {
 });
 
 // Auth: Login
-app.post('/api/auth/login', async (req, res) => {
+app.post(['/api/auth/login', '/auth/login', '/login'], async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -149,7 +155,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Auth: Get Me
-app.get('/api/auth/me', authMiddleware, async (req, res) => {
+app.get(['/api/auth/me', '/auth/me', '/me'], authMiddleware, async (req, res) => {
   try {
     const { db } = await connectToDatabase();
     const user = await db.collection('users').findOne({ _id: new ObjectId(req.userId) });
@@ -168,7 +174,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 });
 
 // Auth: Reset Password
-app.post('/api/auth/reset-password', async (req, res) => {
+app.post(['/api/auth/reset-password', '/auth/reset-password', '/reset-password'], async (req, res) => {
   try {
     const { email, newPassword } = req.body;
     if (!email || !newPassword || newPassword.length < 6) {
@@ -193,7 +199,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 });
 
 // Polls: Create Poll
-app.post('/api/polls', authMiddleware, async (req, res) => {
+app.post(['/api/polls', '/polls'], authMiddleware, async (req, res) => {
   try {
     const { question, options } = req.body;
     if (!question || !Array.isArray(options) || options.length < 2) {
@@ -239,7 +245,7 @@ app.post('/api/polls', authMiddleware, async (req, res) => {
 });
 
 // Polls: Get User Polls
-app.get('/api/polls', authMiddleware, async (req, res) => {
+app.get(['/api/polls', '/polls'], authMiddleware, async (req, res) => {
   try {
     const { db } = await connectToDatabase();
     const polls = await db.collection('polls')
@@ -263,7 +269,7 @@ app.get('/api/polls', authMiddleware, async (req, res) => {
 });
 
 // Polls: Get Poll By Share Code
-app.get('/api/polls/share/:shareCode', async (req, res) => {
+app.get(['/api/polls/share/:shareCode', '/polls/share/:shareCode'], async (req, res) => {
   try {
     const { shareCode } = req.params;
     const { db } = await connectToDatabase();
@@ -285,7 +291,7 @@ app.get('/api/polls/share/:shareCode', async (req, res) => {
 });
 
 // Polls: Get Poll By ID
-app.get('/api/polls/:id', async (req, res) => {
+app.get(['/api/polls/:id', '/polls/:id'], async (req, res) => {
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
@@ -307,7 +313,7 @@ app.get('/api/polls/:id', async (req, res) => {
 });
 
 // Polls: Delete Poll
-app.delete('/api/polls/:id', authMiddleware, async (req, res) => {
+app.delete(['/api/polls/:id', '/polls/:id'], authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
@@ -325,7 +331,7 @@ app.delete('/api/polls/:id', authMiddleware, async (req, res) => {
 });
 
 // Polls: Toggle Status (Freeze/Unfreeze)
-app.patch('/api/polls/:id/status', authMiddleware, async (req, res) => {
+app.patch(['/api/polls/:id/status', '/polls/:id/status'], authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -348,7 +354,7 @@ app.patch('/api/polls/:id/status', authMiddleware, async (req, res) => {
 });
 
 // Voting: Cast Vote
-app.post('/api/polls/:id/vote', async (req, res) => {
+app.post(['/api/polls/:id/vote', '/polls/:id/vote'], async (req, res) => {
   try {
     const { id } = req.params;
     const { optionId } = req.body;
@@ -415,7 +421,7 @@ app.post('/api/polls/:id/vote', async (req, res) => {
 });
 
 // Voting: Get Results
-app.get('/api/polls/:id/results', async (req, res) => {
+app.get(['/api/polls/:id/results', '/polls/:id/results'], async (req, res) => {
   try {
     const { id } = req.params;
     const { db } = await connectToDatabase();
