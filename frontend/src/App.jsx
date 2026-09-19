@@ -33,19 +33,22 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const RootRedirect = () => {
+const AuthRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) {
     return (
       <div className="container main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
         <div className="live-badge" style={{ fontSize: '1rem', padding: '10px 20px' }}>
           <span className="pulse-dot"></span>
-          Loading Pollify Engine...
+          Authenticating...
         </div>
       </div>
     );
   }
-  return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
 };
 
 export default function App() {
@@ -57,9 +60,10 @@ export default function App() {
             <Navbar />
             <div style={{ flex: 1 }}>
               <Routes>
-                <Route path="/" element={<RootRedirect />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
+                {/* Root & Auth Routes */}
+                <Route path="/" element={<AuthRoute><Login /></AuthRoute>} />
+                <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
+                <Route path="/signup" element={<AuthRoute><Signup /></AuthRoute>} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 
                 {/* Public Routes */}
